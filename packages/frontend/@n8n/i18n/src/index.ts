@@ -391,11 +391,18 @@ export class I18nClass {
 	};
 }
 
+
 const loadedLanguages: string[] = [];
+// RTL languages
+const RTL_LANGUAGES = ['fa', 'ar', 'he', 'ur'];
 
 export function setLanguage(locale: string) {
-	i18nInstance.global.locale.value = locale as 'en';
+	i18nInstance.global.locale.value = locale as 'en' | 'fa';
 	document.querySelector('html')!.setAttribute('lang', locale);
+
+	// Set text direction based on locale
+	const isRTL = RTL_LANGUAGES.includes(locale);
+	document.querySelector('html')!.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
 
 	// Invalidate cached baseText results on locale change
 	i18n.clearCache();

@@ -15,6 +15,7 @@ import {
 	HIRING_BANNER,
 	VIEWS,
 } from '@/app/constants';
+
 import { useChatPanelStore } from '@/features/ai/assistant/chatPanel.store';
 import { useAssistantStore } from '@/features/ai/assistant/assistant.store';
 import { useNDVStore } from '@/features/ndv/shared/ndv.store';
@@ -23,7 +24,8 @@ import { useUIStore } from '@/app/stores/ui.store';
 import { useUsersStore } from '@/features/settings/users/users.store';
 import LoadingView from '@/app/views/LoadingView.vue';
 import { locale, N8nCommandBar } from '@n8n/design-system';
-import { setLanguage } from '@n8n/i18n';
+import { setLanguage, loadLanguage } from '@n8n/i18n';
+import type { LocaleMessages } from '@n8n/i18n/types';
 // Note: no need to import en.json here; default 'en' is handled via setLanguage
 import { useRootStore } from '@n8n/stores/useRootStore';
 import axios from 'axios';
@@ -66,7 +68,10 @@ useHistoryHelper(route);
 useWorkflowDiffRouting();
 
 const loading = ref(true);
-const defaultLocale = computed(() => rootStore.defaultLocale);
+
+// Get user locale preference from localStorage, fallback to instance default
+const userLocale = ref<string>(localStorage.getItem('n8n-user-locale') || rootStore.defaultLocale);
+const defaultLocale = computed(() => userLocale.value || rootStore.defaultLocale);
 const isDemoMode = computed(() => route.name === VIEWS.DEMO);
 const hasContentFooter = ref(false);
 const appGrid = ref<Element | null>(null);
@@ -85,6 +90,25 @@ onMounted(async () => {
 	loading.value = false;
 	window.addEventListener('resize', updateGridWidth);
 	await updateGridWidth();
+
+	// Listen for storage events and custom events to update locale
+	const handleStorageChange = (e: StorageEvent) => {
+		if (e.key === 'n8n-user-locale') {
+			userLocale.value = e.newValue || rootStore.defaultLocale;
+		}
+	};
+	const handleLocaleChanged = (e: CustomEvent) => {
+		if (e.detail?.locale) {
+			userLocale.value = e.detail.locale;
+		}
+	};
+	window.addEventListener('storage', handleStorageChange);
+	window.addEventListener('n8n-locale-changed', handleLocaleChanged as EventListener);
+
+	onBeforeUnmount(() => {
+		window.removeEventListener('storage', handleStorageChange);
+		window.removeEventListener('n8n-locale-changed', handleLocaleChanged as EventListener);
+	});
 });
 
 watch(showCommandBar, (newVal) => {
@@ -124,7 +148,18 @@ watch(route, (r) => {
 watch(
 	defaultLocale,
 	async (newLocale) => {
-		setLanguage(newLocale);
+		// Load locale file if not already loaded (non-English locales)
+		if (newLocale !== 'en') {
+			try {
+				const localeModule = await import(`@n8n/i18n/locales/${newLocale}.json`);
+				loadLanguage(newLocale, localeModule.default as LocaleMessages);
+			} catch (error) {
+				console.warn(`Failed to load locale ${newLocale}, falling back to en`, error);
+				setLanguage('en');
+			}
+		} else {
+			setLanguage(newLocale);
+		}
 
 		axios.defaults.headers.common['Accept-Language'] = newLocale;
 		void locale.use(newLocale);

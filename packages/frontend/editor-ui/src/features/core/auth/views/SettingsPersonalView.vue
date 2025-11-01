@@ -1,11 +1,13 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { ROLE, type Role } from '@n8n/api-types';
-import { useI18n } from '@n8n/i18n';
+import { useI18n, setLanguage, loadLanguage } from '@n8n/i18n';
+import type { LocaleMessages } from '@n8n/i18n/types';
 import { useToast } from '@/app/composables/useToast';
 import { useDocumentTitle } from '@/app/composables/useDocumentTitle';
 import type { IFormInputs, ThemeOption } from '@/Interface';
 import type { IUser } from '@n8n/rest-api-client/api/users';
+import { useRootStore } from '@n8n/stores/useRootStore';
 import {
 	CHANGE_PASSWORD_MODAL_KEY,
 	CONFIRM_PASSWORD_MODAL_KEY,
@@ -86,6 +88,17 @@ const usersStore = useUsersStore();
 const settingsStore = useSettingsStore();
 const ssoStore = useSSOStore();
 const cloudPlanStore = useCloudPlanStore();
+const rootStore = useRootStore();
+
+
+// Language selection
+const currentSelectedLocale = ref<string>(
+	localStorage.getItem('n8n-user-locale') || rootStore.defaultLocale,
+);
+const languageOptions = [
+	{ value: 'en', label: 'English' },
+	{ value: 'fa', label: 'فارسی (Persian)' },
+];
 
 const currentUser = computed((): IUser | null => {
 	return usersStore.currentUser;
@@ -115,7 +128,11 @@ const isMfaFeatureEnabled = computed((): boolean => {
 });
 
 const hasAnyPersonalisationChanges = computed((): boolean => {
-	return currentSelectedTheme.value !== uiStore.theme;
+	const localeChanged =
+		currentSelectedLocale.value !==
+		(localStorage.getItem('n8n-user-locale') || rootStore.defaultLocale);
+	const themeChanged = currentSelectedTheme.value !== uiStore.theme;
+	return localeChanged || themeChanged;
 });
 
 const hasAnyChanges = computed(() => {
@@ -274,7 +291,35 @@ async function updatePersonalisationSettings() {
 		return;
 	}
 
-	uiStore.setTheme(currentSelectedTheme.value);
+	// Update theme
+	if (currentSelectedTheme.value !== uiStore.theme) {
+		uiStore.setTheme(currentSelectedTheme.value);
+	}
+
+	// Update locale
+	const oldLocale = localStorage.getItem('n8n-user-locale') || rootStore.defaultLocale;
+	if (currentSelectedLocale.value !== oldLocale) {
+		localStorage.setItem('n8n-user-locale', currentSelectedLocale.value);
+
+		// Load and set the new locale
+		if (currentSelectedLocale.value !== 'en') {
+			try {
+				const localeModule = await import(`@n8n/i18n/locales/${currentSelectedLocale.value}.json`);
+				loadLanguage(currentSelectedLocale.value, localeModule.default as LocaleMessages);
+			} catch (error) {
+				console.warn(`Failed to load locale ${currentSelectedLocale.value}`, error);
+				// Fallback to English
+				localStorage.setItem('n8n-user-locale', 'en');
+				setLanguage('en');
+			}
+		} else {
+			setLanguage('en');
+		}
+		// Trigger reactivity update for App.vue
+		window.dispatchEvent(
+			new CustomEvent('n8n-locale-changed', { detail: { locale: currentSelectedLocale.value } }),
+		);
+	}
 }
 
 function onSaveClick() {
@@ -443,6 +488,25 @@ onBeforeUnmount(() => {
 							:key="item.name"
 							:label="i18n.baseText(item.label)"
 							:value="item.name"
+						>
+						</N8nOption>
+					</N8nSelect>
+				</N8nInputLabel>
+			</div>
+			<div class="mt-m">
+				<N8nInputLabel :label="i18n.baseText('settings.personal.language')">
+					<N8nSelect
+						v-model="currentSelectedLocale"
+						:class="$style.themeSelect"
+						data-test-id="language-select"
+						size="small"
+						filterable
+					>
+						<N8nOption
+							v-for="option in languageOptions"
+							:key="option.value"
+							:label="option.label"
+							:value="option.value"
 						>
 						</N8nOption>
 					</N8nSelect>
