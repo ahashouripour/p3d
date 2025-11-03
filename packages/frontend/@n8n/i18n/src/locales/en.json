@@ -3464,6 +3464,8 @@
 	"settings.personal.theme.light": "Light theme",
 	"settings.personal.theme.dark": "Dark theme",
 	"settings.personal.language": "Language",
+	"settings.personal.language.english": "English",
+	"settings.personal.language.persian": "فارسی (Persian)",
 	"settings.personal.mfa.button.disabled.infobox": "Two-factor authentication is currently disabled.",
 	"settings.personal.mfa.button.enabled.infobox": "Two-factor authentication is currently enabled.",
 	"settings.personal.mfa.button.enabled": "Enable 2FA",

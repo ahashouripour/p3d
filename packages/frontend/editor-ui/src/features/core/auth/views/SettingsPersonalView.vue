@@ -95,10 +95,10 @@ const rootStore = useRootStore();
 const currentSelectedLocale = ref<string>(
 	localStorage.getItem('n8n-user-locale') || rootStore.defaultLocale,
 );
-const languageOptions = [
-	{ value: 'en', label: 'English' },
-	{ value: 'fa', label: 'فارسی (Persian)' },
-];
+const languageOptions = computed(() => [
+	{ value: 'en', label: i18n.baseText('settings.personal.language.english') },
+	{ value: 'fa', label: i18n.baseText('settings.personal.language.persian') },
+]);
 
 const currentUser = computed((): IUser | null => {
 	return usersStore.currentUser;

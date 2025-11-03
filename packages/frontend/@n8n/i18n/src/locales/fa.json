@@ -3317,6 +3317,8 @@
 	"settings.personal.theme.light": "تم روشن",
 	"settings.personal.theme.dark": "تم تیره",
 	"settings.personal.language": "زبان",
+	"settings.personal.language.english": "English (انگلیسی)",
+	"settings.personal.language.persian": "فارسی",
 	"settings.personal.mfa.button.disabled.infobox": "احراز هویت دو عاملی در حال حاضر غیرفعال است.",
 	"settings.personal.mfa.button.enabled.infobox": "احراز هویت دوعاملی در حال حاضر فعال است.",
 	"settings.personal.mfa.button.enabled": "فعال کردن 2FA",
