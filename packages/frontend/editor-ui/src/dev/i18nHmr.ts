@@ -7,13 +7,13 @@ const DEFAULT_LOCALE = 'en';
 
 if (hot) {
 	// Eagerly import locale JSONs so this module becomes their HMR owner
-	// Use recursive pattern from project root to find locales directory
-	// This matches packages/frontend/@n8n/i18n/src/locales/*.json
-	const localeModules = import.meta.glob('**/@n8n/i18n/src/locales/*.json', { eager: true }) as Record<
+	// Use relative path from Vite project root (editor-ui directory)
+	// Pattern matches: ../@n8n/i18n/src/locales/*.json
+	const localeModules = import.meta.glob('../@n8n/i18n/src/locales/*.json', { eager: true }) as Record<
 		string,
 		{ default?: LocaleMessages }
 	>;
-	const localePaths = Object.keys(localeModules);
+	const localePaths = Object.keys(localeModules).filter(Boolean);
 
 	const lcOf = (p: string) => p.match(/\/locales\/([^/]+)\.json$/)?.[1] ?? DEFAULT_LOCALE;
 	const apply = (lc: string, msgs: LocaleMessages) => updateLocaleMessages(lc, msgs);
