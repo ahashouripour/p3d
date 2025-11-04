@@ -12,7 +12,10 @@ import '@n8n/design-system/css/index.scss';
 
 import './n8n-theme.scss';
 // Ensure i18n HMR owner is evaluated as early as possible in dev
-import '@/dev/i18nHmr';
+// Only import in development to avoid processing glob patterns in production builds
+if (import.meta.env.DEV) {
+	import('@/dev/i18nHmr');
+}
 
 import App from '@/App.vue';
 import router from './router';

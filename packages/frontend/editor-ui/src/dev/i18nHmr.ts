@@ -7,6 +7,7 @@ const DEFAULT_LOCALE = 'en';
 
 if (hot) {
 	// Eagerly import locale JSONs so this module becomes their HMR owner
+	// This file is only imported in development mode (via conditional import in main.ts)
 	// Use relative path from Vite project root (editor-ui directory)
 	// Pattern matches: ../@n8n/i18n/src/locales/*.json
 	const localeModules = import.meta.glob('../@n8n/i18n/src/locales/*.json', { eager: true }) as Record<
