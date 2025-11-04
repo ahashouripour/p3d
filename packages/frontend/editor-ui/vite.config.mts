@@ -168,20 +168,6 @@ const plugins: UserConfig['plugins'] = [
 			return [];
 		},
 	},
-	{
-		name: 'exclude-dev-files-in-production',
-		resolveId(id) {
-			// Exclude i18nHmr from production builds to prevent glob processing
-			if (process.env.NODE_ENV === 'production' && (id.includes('dev/i18nHmr') || id.includes('@/dev/i18nHmr'))) {
-				return { id: '\0empty-module', moduleSideEffects: false };
-			}
-		},
-		load(id) {
-			if (id === '\0empty-module') {
-				return 'export {};';
-			}
-		},
-	},
 	...(release
 		? [
 				sentryVitePlugin({
