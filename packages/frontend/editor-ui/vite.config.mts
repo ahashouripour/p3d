@@ -78,6 +78,37 @@ const alias = [
 const { RELEASE: release } = process.env;
 
 const plugins: UserConfig['plugins'] = [
+	// Exclude i18nHmr from production builds early to prevent glob processing
+	{
+		name: 'exclude-i18n-hmr-in-production',
+		enforce: 'pre', // Run before other plugins
+		resolveId(id) {
+			// Exclude i18nHmr from production builds to prevent glob processing
+			// Vite builds are production by default unless in dev mode
+			const isProduction = NODE_ENV !== 'development';
+			if (isProduction) {
+				// Match various formats of the i18nHmr module ID
+				// The alias @/dev/i18nHmr will be resolved, so we check the resolved path too
+				if (
+					id.includes('dev/i18nHmr') ||
+					id.includes('@/dev/i18nHmr') ||
+					id.endsWith('i18nHmr') ||
+					id.endsWith('i18nHmr.ts') ||
+					id.includes('/src/dev/i18nHmr')
+				) {
+					// Return a virtual empty module to prevent glob processing
+					return '\0i18n-hmr-empty';
+				}
+			}
+			return null;
+		},
+		load(id) {
+			if (id === '\0i18n-hmr-empty') {
+				return '// Empty module for production builds - i18nHmr is dev-only';
+			}
+			return null;
+		},
+	},
 	nodePopularityPlugin(),
 	icons({
 		compiler: 'vue3',
@@ -166,34 +197,6 @@ const plugins: UserConfig['plugins'] = [
 			sendLocaleUpdate(server, file);
 			// Swallow default HMR for this file to prevent full page reloads
 			return [];
-		},
-	},
-	{
-		name: 'exclude-i18n-hmr-in-production',
-		buildStart() {
-			// In production builds, exclude the i18nHmr file completely
-			// This prevents import.meta.glob from being processed
-			if (process.env.NODE_ENV === 'production') {
-				// This file should not be included in production builds
-				// The conditional import in main.ts handles dev-only loading
-			}
-		},
-		resolveId(id, importer) {
-			// Exclude i18nHmr from production builds to prevent glob processing
-			if (
-				process.env.NODE_ENV === 'production' &&
-				(id.includes('/dev/i18nHmr') ||
-					id.includes('@/dev/i18nHmr') ||
-					(importer && id.endsWith('i18nHmr.ts')))
-			) {
-				// Return a virtual empty module
-				return '\0i18n-hmr-empty';
-			}
-		},
-		load(id) {
-			if (id === '\0i18n-hmr-empty') {
-				return '// Empty module for production builds';
-			}
 		},
 	},
 	...(release
