@@ -168,6 +168,34 @@ const plugins: UserConfig['plugins'] = [
 			return [];
 		},
 	},
+	{
+		name: 'exclude-i18n-hmr-in-production',
+		buildStart() {
+			// In production builds, exclude the i18nHmr file completely
+			// This prevents import.meta.glob from being processed
+			if (process.env.NODE_ENV === 'production') {
+				// This file should not be included in production builds
+				// The conditional import in main.ts handles dev-only loading
+			}
+		},
+		resolveId(id, importer) {
+			// Exclude i18nHmr from production builds to prevent glob processing
+			if (
+				process.env.NODE_ENV === 'production' &&
+				(id.includes('/dev/i18nHmr') ||
+					id.includes('@/dev/i18nHmr') ||
+					(importer && id.endsWith('i18nHmr.ts')))
+			) {
+				// Return a virtual empty module
+				return '\0i18n-hmr-empty';
+			}
+		},
+		load(id) {
+			if (id === '\0i18n-hmr-empty') {
+				return '// Empty module for production builds';
+			}
+		},
+	},
 	...(release
 		? [
 				sentryVitePlugin({
