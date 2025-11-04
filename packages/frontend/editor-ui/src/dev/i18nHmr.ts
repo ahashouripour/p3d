@@ -5,12 +5,12 @@ import { locale as designLocale } from '@n8n/design-system';
 const hot = import.meta.hot;
 const DEFAULT_LOCALE = 'en';
 
-if (hot) {
+if (hot && import.meta.env.DEV) {
 	// Eagerly import locale JSONs so this module becomes their HMR owner
 	// This file is only imported in development mode (via conditional import in main.ts)
-	// Use relative path from Vite project root (editor-ui directory)
-	// Pattern matches: ../@n8n/i18n/src/locales/*.json
-	const localeModules = import.meta.glob('../@n8n/i18n/src/locales/*.json', { eager: true }) as Record<
+	// Use recursive pattern from project root to find locales directory
+	// Pattern matches: packages/frontend/@n8n/i18n/src/locales/*.json
+	const localeModules = import.meta.glob('**/@n8n/i18n/src/locales/*.json', { eager: true }) as Record<
 		string,
 		{ default?: LocaleMessages }
 	>;
