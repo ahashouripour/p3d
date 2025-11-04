@@ -1,23 +1,13 @@
 import { Container, type Constructable } from '@n8n/di';
 import { mock } from 'jest-mock-extended';
 
-// Local DeepPartial type to avoid ts-essentials version conflicts
-// This matches the structure expected by jest-mock-extended
-type DeepPartial<T> = T extends object
-	? {
-			[P in keyof T]?: T[P] extends (infer U)[]
-				? DeepPartial<U>[]
-				: T[P] extends ReadonlyArray<infer U>
-					? ReadonlyArray<DeepPartial<U>>
-					: T[P] extends Function
-						? T[P]
-						: DeepPartial<T[P]>;
-		}
-	: T;
+// Extract the exact parameter type that jest-mock-extended's mock function expects
+// This avoids ts-essentials version conflicts by using the actual type from the library
+type MockData<T> = Parameters<typeof mock<T>>[0];
 
 export const mockInstance = <T>(
 	serviceClass: Constructable<T>,
-	data: DeepPartial<T> | undefined = undefined,
+	data: MockData<T> | undefined = undefined,
 ) => {
 	const instance = mock<T>(data);
 	Container.set(serviceClass, instance);
